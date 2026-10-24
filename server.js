@@ -477,4 +477,14 @@ app.post('/api/collect/:slug', (req, res) => {
 
 // ---------------- helpers ----------------
 function escapeHtml(s) {
-  return String(s == null ? '' : s).replace
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+function absoluteBase(req) {
+  const proto = (req.headers['x-forwarded-proto'] || req.protocol || 'https').split(',')[0];
+  const host = req.headers['x-forwarded-host'] || req.headers['host'];
+  return `${proto}://${host}`;
+}
+
+app.listen(PORT, () => console.log(`OGGY Unknown listening on :${PORT}`));
