@@ -4,8 +4,20 @@ const path = require('path');
 const fs = require('fs');
 const Database = require('better-sqlite3');
 
+// Prefer DB_PATH from env, else fall back to ./data/app.db next to the app.
+// On Render Free tier, /data is read-only — only a paid disk makes it writable.
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data', 'app.db');
-fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+
+try {
+  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+} catch (e) {
+  if (e.code !== 'EEXIST') {
+    console.error(`[db] cannot create dir for ${DB_PATH}: ${e.message}`);
+    console.error('[db] tip: unset DB_PATH or set it to ./data/app.db on Free tier,');
+    console.error('[db]      or attach a persistent disk mounted at /data (paid plan).');
+    process.exit(1);
+  }
+}
 
 const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
@@ -39,4 +51,5 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_visits_user ON visits(user_id, id DESC);
 `);
 
+console.log(`[db] using ${DB_PATH}`);
 module.exports = db;
